@@ -1,0 +1,1710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nightly E2E Failure Pipeline — Plan</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface-2: #1c2129;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+    --purple: #bc8cff;
+    --pink: #f778ba;
+    --cyan: #39d2c0;
+    --sidebar-w: 260px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Sidebar */
+  nav {
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-w);
+    height: 100vh;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 0;
+    z-index: 100;
+  }
+
+  nav .logo {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  nav .logo h2 {
+    font-size: 15px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+
+  nav .logo span {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 2px;
+  }
+
+  nav .group-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    padding: 16px 20px 6px;
+    font-weight: 600;
+  }
+
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 20px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+
+  nav a:hover, nav a.active {
+    color: var(--text);
+    background: var(--surface-2);
+  }
+
+  nav a .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Main */
+  main {
+    margin-left: var(--sidebar-w);
+    max-width: 1200px;
+    padding: 48px 64px 120px;
+  }
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+
+  h1 + p { color: var(--text-muted); margin-bottom: 48px; font-size: 15px; }
+
+  section { margin-bottom: 64px; scroll-margin-top: 24px; }
+
+  h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: -0.3px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  h2 .badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 24px 0 10px;
+    color: var(--text);
+  }
+
+  p, li { font-size: 14px; color: var(--text-muted); }
+  p { margin-bottom: 12px; }
+  ul, ol { padding-left: 20px; margin-bottom: 16px; }
+  li { margin-bottom: 4px; }
+  strong { color: var(--text); font-weight: 600; }
+  code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    background: var(--surface-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent);
+  }
+
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  /* Flow diagram */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 24px 0;
+  }
+
+  .flow-step {
+    display: flex;
+    align-items: stretch;
+    gap: 20px;
+    min-height: 70px;
+  }
+
+  .flow-rail {
+    width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .flow-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid;
+    background: var(--bg);
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .flow-line {
+    width: 2px;
+    flex: 1;
+    min-height: 10px;
+  }
+
+  .flow-content {
+    flex: 1;
+    padding: 0 0 24px;
+  }
+
+  .flow-content h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .flow-content p {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .flow-content .meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .flow-content .meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Branch diagram */
+  .branch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+  }
+
+  .branch-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    background: var(--surface);
+  }
+
+  .branch-card h5 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .branch-card p { font-size: 12px; margin-bottom: 0; }
+
+  .branch-card.full-width {
+    grid-column: 1 / -1;
+  }
+
+  /* Decision table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  th {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--border);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  .tag-green { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-red { background: rgba(248,81,73,0.15); color: var(--red); }
+  .tag-orange { background: rgba(210,153,34,0.15); color: var(--orange); }
+  .tag-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-pink { background: rgba(247,120,186,0.15); color: var(--pink); }
+  .tag-cyan { background: rgba(57,210,192,0.15); color: var(--cyan); }
+
+  /* Architecture boxes */
+  .arch {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    padding: 20px;
+    margin: 16px 0;
+  }
+
+  .arch-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .arch-box {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    background: var(--surface-2);
+  }
+
+  .arch-box h5 {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .arch-box p {
+    font-size: 11px;
+    margin-bottom: 0;
+    line-height: 1.5;
+  }
+
+  /* State timeline */
+  .timeline {
+    border-left: 2px solid var(--border);
+    margin: 16px 0 16px 8px;
+    padding-left: 20px;
+  }
+
+  .timeline-item {
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .timeline-item::before {
+    content: '';
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    position: absolute;
+    left: -26px;
+    top: 4px;
+  }
+
+  .timeline-item.t-blue::before { background: var(--accent); }
+  .timeline-item.t-green::before { background: var(--green); }
+  .timeline-item.t-red::before { background: var(--red); }
+  .timeline-item.t-orange::before { background: var(--orange); }
+  .timeline-item.t-purple::before { background: var(--purple); }
+
+  .timeline-item h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .timeline-item p {
+    font-size: 12px;
+    margin: 2px 0 0;
+  }
+
+  /* Callout */
+  .callout {
+    border-left: 3px solid;
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin: 16px 0;
+    font-size: 13px;
+  }
+
+  .callout-blue { border-color: var(--accent); background: rgba(88,166,255,0.06); }
+  .callout-orange { border-color: var(--orange); background: rgba(210,153,34,0.06); }
+  .callout-green { border-color: var(--green); background: rgba(63,185,80,0.06); }
+  .callout p { margin-bottom: 0; }
+
+  /* File tree */
+  .file-tree {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .file-tree .dir { color: var(--accent); }
+  .file-tree .new { color: var(--green); }
+  .file-tree .existing { color: var(--text-muted); }
+  .file-tree .comment { color: #484f58; }
+
+  /* Overview cards */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 24px 0;
+  }
+
+  .overview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .overview-card .num {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .overview-card .label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Dual-path */
+  .dual-path {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin: 16px 0;
+  }
+
+  .dual-path .path {
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+
+  .dual-path .path:first-child {
+    border-radius: 8px 0 0 8px;
+    border-right: none;
+  }
+
+  .dual-path .path:last-child {
+    border-radius: 0 8px 8px 0;
+  }
+
+  .dual-path .path h5 {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .dual-path .path p { font-size: 12px; margin-bottom: 4px; }
+
+  /* Separator */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 48px 0;
+  }
+
+  /* Mermaid diagram container */
+  .mermaid-wrap {
+    margin: 24px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    overflow-x: auto;
+  }
+
+  .mermaid-wrap .mermaid {
+    display: flex;
+    justify-content: center;
+  }
+
+  .mermaid-wrap .mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  @media (max-width: 900px) {
+    nav { display: none; }
+    main { margin-left: 0; padding: 24px; }
+    .overview-grid { grid-template-columns: repeat(2, 1fr); }
+    .branch { grid-template-columns: 1fr; }
+    .arch-grid { grid-template-columns: 1fr; }
+    .dual-path { grid-template-columns: 1fr; }
+    .dual-path .path:first-child { border-radius: 8px 8px 0 0; border-right: 1px solid var(--border); border-bottom: none; }
+    .dual-path .path:last-child { border-radius: 0 0 8px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">
+    <h2>Nightly E2E Pipeline</h2>
+    <span>rhdh-plugin-export-overlays</span>
+  </div>
+
+  <div class="group-label">Overview</div>
+  <a href="#overview"><span class="dot" style="background:var(--accent)"></span> Summary</a>
+  <a href="#flow-diagram"><span class="dot" style="background:var(--green)"></span> Flow Diagram</a>
+  <a href="#decision-tree"><span class="dot" style="background:var(--orange)"></span> Decision Tree</a>
+  <a href="#architecture"><span class="dot" style="background:var(--purple)"></span> Architecture</a>
+  <a href="#entry-points"><span class="dot" style="background:var(--cyan)"></span> Entry Points</a>
+
+  <div class="group-label">Pipeline Phases</div>
+  <a href="#detect"><span class="dot" style="background:var(--orange)"></span> 1. Detect Failure</a>
+  <a href="#analyze"><span class="dot" style="background:var(--accent)"></span> 2. Analyze</a>
+  <a href="#classify"><span class="dot" style="background:var(--purple)"></span> 3. Classify</a>
+  <a href="#issue"><span class="dot" style="background:var(--cyan)"></span> 4. GitHub Issue</a>
+  <a href="#fix"><span class="dot" style="background:var(--green)"></span> 5. Fix</a>
+  <a href="#push-pr"><span class="dot" style="background:var(--green)"></span> 6. Push + PR</a>
+  <a href="#monitor"><span class="dot" style="background:var(--orange)"></span> 7. Monitor CI</a>
+  <a href="#iterate"><span class="dot" style="background:var(--pink)"></span> 8. Iterate</a>
+  <a href="#skip-jira"><span class="dot" style="background:var(--red)"></span> 9. Skip + JIRA</a>
+
+  <div class="group-label">Lifecycle</div>
+  <a href="#post-pipeline"><span class="dot" style="background:var(--green)"></span> Post-Pipeline</a>
+  <a href="#state"><span class="dot" style="background:var(--cyan)"></span> State Management</a>
+  <a href="#nightly-dedup"><span class="dot" style="background:var(--orange)"></span> Nightly Dedup</a>
+  <a href="#stale-skip"><span class="dot" style="background:var(--purple)"></span> Stale-Skip Scanner</a>
+
+  <div class="group-label">Implementation</div>
+  <a href="#files"><span class="dot" style="background:var(--accent)"></span> Files</a>
+  <a href="#credentials"><span class="dot" style="background:var(--red)"></span> Credentials</a>
+  <a href="#decisions"><span class="dot" style="background:var(--text-muted)"></span> Decision Log</a>
+</nav>
+
+<main>
+
+<h1>Nightly E2E Failure Pipeline</h1>
+<p>Automated pipeline that detects nightly E2E test case failures, analyzes root causes, attempts fixes, and escalates when fixes don't work. Fully automated via GitHub Actions for the upstream repo.</p>
+
+<!-- ========== OVERVIEW ========== -->
+<section id="overview">
+  <h2>Summary</h2>
+
+  <div class="overview-grid">
+    <div class="overview-card">
+      <div class="num">9</div>
+      <div class="label">Pipeline phases</div>
+    </div>
+    <div class="overview-card">
+      <div class="num">2</div>
+      <div class="label">Max fix attempts</div>
+    </div>
+    <div class="overview-card">
+      <div class="num">~105m</div>
+      <div class="label">Worst-case runtime</div>
+    </div>
+    <div class="overview-card">
+      <div class="num">$0</div>
+      <div class="label">GH Actions cost</div>
+    </div>
+  </div>
+
+  <p>The pipeline runs as a single GitHub Actions job on a daily cron schedule. It detects nightly failures by checking GCS artifacts, runs a single AI agent (<code>e2e-fix</code>) that analyzes root causes, creates or updates GitHub issues for tracking, implements fixes, triggers OpenShift CI on the fix PR, and polls for results. If the fix passes CI, the pipeline requests review and labels the PR for merge. If two fix attempts fail, the pipeline escalates: it skips the failing test case and creates a JIRA bug for tracking.</p>
+
+  <div class="callout callout-blue">
+    <p><strong>Cost:</strong> The upstream repo is open source. GitHub Actions minutes are free and unlimited for public repositories. The ~40-minute CI polling wait costs nothing &mdash; the runner sleeps between polls. The 6-hour per-job hard limit accommodates the full two-iteration pipeline comfortably.</p>
+  </div>
+</section>
+
+<!-- ========== FLOW DIAGRAM ========== -->
+<section id="flow-diagram">
+  <h2>
+    <span class="dot" style="background:var(--green);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Pipeline Flow
+  </h2>
+
+  <p>Complete end-to-end flow from nightly failure to resolution. Green path = happy path, red path = escalation.</p>
+
+  <div class="mermaid-wrap">
+    <pre class="mermaid">
+flowchart TD
+    CRON["🕐 Nightly Cron\n(GH Actions daily)"]
+    CRON --> PASS{"Nightly\npassed?"}
+
+    PASS -->|"✓ Yes"| DONE_PASS(["✅ Done\nall tests green"])
+    PASS -->|"✗ No"| ANALYZE
+
+    ANALYZE["🔍 Analyze\ne2e-failure-analysis skill"]
+    ANALYZE --> CLASSIFY{"fix_category?"}
+
+    CLASSIFY -->|"infra_flake"| DONE_INFRA(["📝 Log + done\ntransient issue"])
+    CLASSIFY -->|"product_bug / environment / test_fix"| DEDUP
+
+    DEDUP{"Open fix PR\nfor this test case?"}
+    DEDUP -->|"Yes"| COMMENT_EXIST(["💬 Comment on issue\nstill failing, PR pending merge"])
+    DEDUP -->|"No"| ISSUE_OPS
+
+    ISSUE_OPS["📋 Create or update GH Issue\ngh-issue-ops skill\n(dedup + create/comment)"]
+    ISSUE_OPS --> IS_TEST_FIX{"test_fix?"}
+
+    IS_TEST_FIX -->|"Yes"| FIX
+    IS_TEST_FIX -->|"No (product_bug / environment)"| DONE_ISSUE(["✅ Done\nissue tracked, no fix attempt"])
+
+    subgraph LOOP ["Fix → Verify loop (max 2 attempts)"]
+        FIX["🔧 Fix Agent\nverify analysis, implement fix"]
+        FIX --> PUSH["🚀 Push + PR\ncross-fork to upstream"]
+        PUSH --> TRIGGER["⏳ Trigger CI\n/test e2e-ocp-helm-nightly"]
+        TRIGGER --> POLL["⏳ Poll gh pr checks\n~40 min, every 5 min"]
+        POLL --> CI{"CI passed?"}
+
+        CI -->|"✓ Passed"| CLOSE_FIX
+        CI -->|"✗ Failed"| RETRY{"attempt\n< max?"}
+
+        RETRY -->|"Yes"| REANALYZE["🔍 Re-analyze\nnew prow URL"]
+        REANALYZE --> UPDATE["📝 Update PR\nnew commit"]
+        UPDATE --> TRIGGER
+
+        RETRY -->|"No (max)"| ESCALATE
+    end
+
+    CLOSE_FIX["✅ Close issue\nFixed in PR #N"]
+    CLOSE_FIX --> LABEL_FIX["🏷️ Label + review\nready-to-merge"]
+    LABEL_FIX --> DONE_FIX(["✅ Done\nhuman merges"])
+
+    ESCALATE["🚨 Escalate"]
+    ESCALATE --> JIRA["📋 Create JIRA bug\nRHDHBUGS via ACLI"]
+    JIRA --> SKIP["⏭️ Add test.skip\nreason (RHDHBUGS-XXXX)"]
+    SKIP --> PUSH_SKIP["🚀 Commit + push\nsame branch, same PR"]
+    PUSH_SKIP --> LABEL_SKIP["🏷️ Label + review\nready-to-merge"]
+    LABEL_SKIP --> CLOSE_SKIP(["🔴 Close issue\nSkipped — JIRA-XXX"])
+
+    style CRON fill:#1a3a5c,stroke:#58a6ff,color:#58a6ff
+    style ANALYZE fill:#2d1f4e,stroke:#bc8cff,color:#bc8cff
+    style REANALYZE fill:#2d1f4e,stroke:#bc8cff,color:#bc8cff
+    style FIX fill:#2d1f4e,stroke:#bc8cff,color:#bc8cff
+    style DEDUP fill:#3d2a0a,stroke:#d29922,color:#d29922
+    style ISSUE_OPS fill:#1a3a3a,stroke:#39d2c0,color:#39d2c0
+    style IS_TEST_FIX fill:#3d2a0a,stroke:#d29922,color:#d29922
+    style DONE_ISSUE fill:#161b22,stroke:#8b949e,color:#8b949e
+    style PUSH fill:#1a3a2e,stroke:#3fb950,color:#3fb950
+    style CLOSE_FIX fill:#1a3a2e,stroke:#3fb950,color:#3fb950
+    style LABEL_FIX fill:#1a3a2e,stroke:#3fb950,color:#3fb950
+    style TRIGGER fill:#1a3a3a,stroke:#39d2c0,color:#39d2c0
+    style POLL fill:#1a3a3a,stroke:#39d2c0,color:#39d2c0
+    style ESCALATE fill:#3d1a1a,stroke:#f85149,color:#f85149
+    style JIRA fill:#3d1a1a,stroke:#f85149,color:#f85149
+    style SKIP fill:#3d1a1a,stroke:#f85149,color:#f85149
+    style PUSH_SKIP fill:#1a3a2e,stroke:#3fb950,color:#3fb950
+    style LABEL_SKIP fill:#1a3a2e,stroke:#3fb950,color:#3fb950
+    style UPDATE fill:#2d1f3a,stroke:#f778ba,color:#f778ba
+    style PASS fill:#3d2a0a,stroke:#d29922,color:#d29922
+    style CLASSIFY fill:#3d2a0a,stroke:#d29922,color:#d29922
+    style CI fill:#3d2a0a,stroke:#d29922,color:#d29922
+    style RETRY fill:#3d2a0a,stroke:#d29922,color:#d29922
+    style DONE_PASS fill:#161b22,stroke:#8b949e,color:#8b949e
+    style DONE_INFRA fill:#161b22,stroke:#8b949e,color:#8b949e
+    style DONE_FIX fill:#161b22,stroke:#8b949e,color:#8b949e
+    style COMMENT_EXIST fill:#161b22,stroke:#8b949e,color:#8b949e
+    style CLOSE_SKIP fill:#3d1a1a,stroke:#f85149,color:#f85149
+    </pre>
+  </div>
+</section>
+
+<!-- ========== DECISION TREE ========== -->
+<section id="decision-tree">
+  <h2>
+    <span class="dot" style="background:var(--orange);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Decision Tree
+  </h2>
+
+  <p>Every decision point in the pipeline, who makes it, and what each outcome triggers.</p>
+
+  <table>
+    <tr>
+      <th style="width:30%">Decision point</th>
+      <th style="width:15%">Who decides</th>
+      <th>Outcomes</th>
+    </tr>
+    <tr>
+      <td><strong>Did the nightly fail?</strong></td>
+      <td><span class="tag tag-blue">GH Actions</span></td>
+      <td>
+        <span style="color:var(--green)">&#9679;</span> <strong>Passed</strong> &rarr; Exit. Nothing to do.<br>
+        <span style="color:var(--red)">&#9679;</span> <strong>Failed</strong> &rarr; Run the e2e-fix agent with prow URL.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>What is the fix_category?</strong><br><small style="color:var(--text-muted)">Classification after analysis</small></td>
+      <td><span class="tag tag-purple">Agent</span></td>
+      <td>
+        <span style="color:var(--text-muted)">&#9679;</span> <strong>infra_flake</strong> &rarr; Log and exit. Transient, no action needed.<br>
+        <span style="color:var(--red)">&#9679;</span> <strong>product_bug</strong> &rarr; Create GH issue. No fix &mdash; root cause is in plugin source.<br>
+        <span style="color:var(--cyan)">&#9679;</span> <strong>environment</strong> &rarr; Create GH issue for visibility. Cluster/OCP problem.<br>
+        <span style="color:var(--green)">&#9679;</span> <strong>test_fix</strong> &rarr; Create/update issue, then proceed to fix.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Existing issue or fix PR?</strong><br><small style="color:var(--text-muted)">Unified dedup for all non-infra categories</small></td>
+      <td><span class="tag tag-cyan">Skill</span></td>
+      <td>
+        <span style="color:var(--orange)">&#9679;</span> <strong>Fix PR exists</strong> &rarr; Comment on issue: "still failing, PR pending merge." Stop.<br>
+        <span style="color:var(--cyan)">&#9679;</span> <strong>Issue exists (no PR)</strong> &rarr; Comment with new analysis. If test_fix &rarr; attempt fix. If product_bug/environment &rarr; done.<br>
+        <span style="color:var(--accent)">&#9679;</span> <strong>Nothing exists</strong> &rarr; Create new issue. If test_fix &rarr; attempt fix. If product_bug/environment &rarr; done.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Is the analysis correct?</strong><br><small style="color:var(--text-muted)">Verify against actual code</small></td>
+      <td><span class="tag tag-purple">Agent</span></td>
+      <td>
+        <span style="color:var(--green)">&#9679;</span> <strong>Yes</strong> &rarr; Implement the fix as suggested.<br>
+        <span style="color:var(--orange)">&#9679;</span> <strong>Partially</strong> &rarr; Use valid parts, reason from code for the rest.<br>
+        <span style="color:var(--red)">&#9679;</span> <strong>No</strong> &rarr; Ignore analysis. Reason independently from code and error.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Did CI pass?</strong><br><small style="color:var(--text-muted)">Poll gh pr checks every 5 min</small></td>
+      <td><span class="tag tag-blue">GH Actions</span></td>
+      <td>
+        <span style="color:var(--green)">&#9679;</span> <strong>Passed</strong> &rarr; Close issue. Label PR <code>ready-to-merge</code>. Request review. Done.<br>
+        <span style="color:var(--red)">&#9679;</span> <strong>Failed</strong> &rarr; Check attempt count to decide next step.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Attempt count &lt; max (2)?</strong><br><small style="color:var(--text-muted)">Read from issue labels</small></td>
+      <td><span class="tag tag-blue">GH Actions</span></td>
+      <td>
+        <span style="color:var(--pink)">&#9679;</span> <strong>Yes (retry)</strong> &rarr; Extract prow URL from check <code>detailsUrl</code>. Re-analyze. Update PR. Trigger CI again.<br>
+        <span style="color:var(--red)">&#9679;</span> <strong>No (max reached)</strong> &rarr; Escalate: add <code>test.skip</code>, create JIRA bug, close issue.
+      </td>
+    </tr>
+    <tr>
+      <td><strong>Iteration strategy?</strong><br><small style="color:var(--text-muted)">Agent reads prior attempts from issue</small></td>
+      <td><span class="tag tag-purple">Agent</span></td>
+      <td>
+        <span style="color:var(--accent)">&#9679;</span> <strong>Same root cause</strong> &rarr; Refine the previous fix &mdash; address what attempt 1 missed.<br>
+        <span style="color:var(--purple)">&#9679;</span> <strong>Different problem</strong> &rarr; First fix revealed a new issue. Try a different approach.
+      </td>
+    </tr>
+  </table>
+</section>
+
+<hr>
+
+<!-- ========== ARCHITECTURE ========== -->
+<section id="architecture">
+  <h2>Architecture <span class="badge tag-purple">Agent + Skills</span></h2>
+
+  <p>The <strong>agent</strong> makes all judgment calls: classifying failures, deciding fix strategy, and choosing when to escalate. <strong>Skills</strong> provide reusable procedures for specific tasks &mdash; how to read prow artifacts, how to manage GitHub issues, how to interact with JIRA.</p>
+
+  <div class="arch">
+    <div class="arch-title">e2e-fix agent &mdash; the brain</div>
+    <p style="font-size:13px;margin-bottom:16px">Mission: fix nightly E2E failures or escalate. Decides what to do and when.</p>
+    <div class="arch-grid">
+      <div class="arch-box">
+        <h5>e2e-failure-analysis</h5>
+        <p><span class="tag tag-blue">skill</span></p>
+        <p>How to fetch GCS artifacts, read pod logs, events.txt, previous pod logs, and trace root causes.</p>
+      </div>
+      <div class="arch-box">
+        <h5>gh-issue-ops</h5>
+        <p><span class="tag tag-cyan">skill</span></p>
+        <p>How to dedup-check, create, comment on, label, and close GitHub issues.</p>
+      </div>
+      <div class="arch-box">
+        <h5>jira-ops</h5>
+        <p><span class="tag tag-orange">skill</span></p>
+        <p>How to create RHDHBUGS tickets via ACLI with the right fields and cross-references.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Agent decides vs Skills instruct</h3>
+  <table>
+    <tr><th>Agent decides</th><th>Skills provide</th></tr>
+    <tr>
+      <td>Is this a test_fix, product_bug, or infra_flake?</td>
+      <td>How to fetch and parse prow artifacts</td>
+    </tr>
+    <tr>
+      <td>Is the analysis actually correct? (verify against code)</td>
+      <td>How to search for duplicate issues</td>
+    </tr>
+    <tr>
+      <td>What is the smallest correct fix?</td>
+      <td>How to create well-structured GitHub issues</td>
+    </tr>
+    <tr>
+      <td>On retry: same approach or pivot?</td>
+      <td>How to create JIRA bugs via ACLI</td>
+    </tr>
+    <tr>
+      <td>When to give up and escalate to skip</td>
+      <td>How to format skip comments for grep-ability</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ========== ENTRY POINTS ========== -->
+<section id="entry-points">
+  <h2>Entry Points</h2>
+
+  <div class="dual-path">
+    <div class="path" style="background:var(--surface)">
+      <h5 style="color:var(--accent)">GitHub Actions (automated)</h5>
+      <p>Cron runs daily after the nightly window.</p>
+      <p>Checks GCS for failures per branch.</p>
+      <p>If failed &rarr; <code>fullsend run e2e-fix</code></p>
+      <p style="margin-top:8px"><span class="tag tag-blue">branches: main, release-1.10</span></p>
+    </div>
+    <div class="path" style="background:var(--surface)">
+      <h5 style="color:var(--green)">Local (manual)</h5>
+      <p><code>/fs-e2e-fix &lt;prow-url&gt;</code></p>
+      <p><code>/fs-e2e-fix iterate &lt;url&gt; --issue 42</code></p>
+      <p><code>/fs-e2e-fix skip --issue 42</code></p>
+      <p style="margin-top:8px"><span class="tag tag-green">same agent prompt, different credential source</span></p>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <p><strong>Same SKILL.md, both environments.</strong> The agent and skills run identically in a fullsend sandbox (GH Actions) or locally via Claude Code. The only difference is credential plumbing &mdash; fullsend uses harness YAML + post-scripts; local uses the user's <code>gh</code> auth and ACLI config.</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ========== PHASE 1: DETECT ========== -->
+<section id="detect">
+  <h2>
+    <span class="dot" style="background:var(--orange);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Phase 1: Detect Failure
+    <span class="badge tag-orange">GH Actions</span>
+  </h2>
+
+  <p>The GitHub Actions cron job checks GCS for the latest nightly run per branch. Same pattern as the existing <code>Overlay-alerts.gs</code> script.</p>
+
+  <pre>
+# For each configured branch (main, release-1.10):
+
+GCS_BASE="https://gcsweb-ci.apps.ci.l2s4.p1.openshiftapps.com/gcs/test-platform-results/logs"
+JOB_NAME="periodic-ci-redhat-developer-rhdh-plugin-export-overlays-${BRANCH}-e2e-ocp-helm-nightly"
+
+# 1. List latest run ID from GCS directory listing
+# 2. Fetch results.json from latest run
+# 3. Check stats.unexpected > 0 (failures exist)
+# 4. If failed → extract prow URL → proceed to ANALYZE</pre>
+
+  <div class="branch">
+    <div class="branch-card">
+      <h5><span class="dot" style="background:var(--green);width:8px;height:8px;display:inline-block;border-radius:50%"></span> All tests passed</h5>
+      <p>Nothing to do. Log success and exit.</p>
+    </div>
+    <div class="branch-card">
+      <h5><span class="dot" style="background:var(--red);width:8px;height:8px;display:inline-block;border-radius:50%"></span> Tests failed</h5>
+      <p>Extract prow URL. Proceed to Phase 2 (Analyze).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PHASE 2: ANALYZE ========== -->
+<section id="analyze">
+  <h2>
+    <span class="dot" style="background:var(--accent);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Phase 2: Analyze
+    <span class="badge tag-blue">Agent + Skill</span>
+  </h2>
+
+  <p>The agent uses the <strong>e2e-failure-analysis</strong> skill to investigate the prow failure. The skill walks through the GCS artifacts &mdash; Playwright results, pod logs, cluster events, previous pod logs &mdash; and traces the root cause. The agent then classifies the failure and writes a structured result.</p>
+
+  <div class="branch">
+    <div class="branch-card">
+      <h5>Input</h5>
+      <p>Prow URL pointing to the failed nightly run</p>
+    </div>
+    <div class="branch-card">
+      <h5>Output</h5>
+      <p><code>agent-result.json</code> with root cause, failed test cases, remediation, and <code>fix_category</code></p>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <p><strong>What the skill covers:</strong> Playwright <code>results.json</code> parsing, pod restart investigation (events.txt, previous pod logs), config and timeout analysis, missing plugin detection. See <code>e2e-failure-analysis/SKILL.md</code> for the full methodology.</p>
+  </div>
+
+
+</section>
+
+<!-- ========== PHASE 3: CLASSIFY ========== -->
+<section id="classify">
+  <h2>
+    <span class="dot" style="background:var(--purple);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Phase 3: Classify
+    <span class="badge tag-purple">Agent judgment</span>
+  </h2>
+
+  <p>Based on the analysis, the agent classifies the failure into one of four categories. This determines how far the pipeline goes &mdash; only <code>test_fix</code> proceeds to a fix attempt.</p>
+
+  <table>
+    <tr><th>Category</th><th>Meaning</th><th>Pipeline action</th></tr>
+    <tr>
+      <td><code class="tag tag-green">test_fix</code></td>
+      <td>Fixable in test specs or deployment config</td>
+      <td>Dedup check &rarr; create/update issue &rarr; fix &rarr; PR &rarr; CI</td>
+    </tr>
+    <tr>
+      <td><code class="tag tag-red">product_bug</code></td>
+      <td>Root cause is in plugin source code</td>
+      <td>Dedup check &rarr; create/update issue only. No fix attempt.</td>
+    </tr>
+    <tr>
+      <td><code class="tag tag-orange">infra_flake</code></td>
+      <td>Transient infra/cluster issue</td>
+      <td>Log and exit. No issue, no fix.</td>
+    </tr>
+    <tr>
+      <td><code class="tag tag-cyan">environment</code></td>
+      <td>OCP/cluster misconfiguration</td>
+      <td>Dedup check &rarr; create/update issue for visibility. No fix attempt.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ========== PHASE 4: GITHUB ISSUE ========== -->
+<section id="issue">
+  <h2>
+    <span class="dot" style="background:var(--cyan);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Phase 4: GitHub Issue
+    <span class="badge tag-cyan">Agent + Skill</span>
+  </h2>
+
+  <p>All non-infra failures (<code>test_fix</code>, <code>product_bug</code>, <code>environment</code>) pass through this phase. The agent uses the <strong>gh-issue-ops</strong> skill to check for existing work and create or update a tracking issue on the upstream repo.</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--cyan)"></div>
+        <div class="flow-line" style="background:var(--cyan)"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Check for open fix PR</h4>
+        <p>If a fix PR already exists for this test case (from a previous nightly run that hasn't been merged yet), the pipeline stops here. Comments on the existing issue: "Nightly still failing. Fix PR #N pending merge."</p>
+        <div class="meta"><span class="tag tag-orange">stops pipeline if PR exists</span></div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--cyan)"></div>
+        <div class="flow-line" style="background:var(--cyan)"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Issue dedup check</h4>
+        <p>Searches for an existing open issue for the same failing test case. Prevents creating duplicates across nightly runs.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--cyan)"></div>
+        <div class="flow-line" style="background:var(--cyan)"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Create or comment</h4>
+        <div class="branch">
+          <div class="branch-card">
+            <h5>No existing issue</h5>
+            <p>Create a new issue with the full analysis: root cause, prow URL, fix_category, failed test cases.</p>
+          </div>
+          <div class="branch-card">
+            <h5>Issue already exists</h5>
+            <p>Comment on it with the new analysis. Adds fresh data to the coordination log.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--cyan)"></div>
+        <div class="flow-line" style="background:transparent"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Route by category</h4>
+        <p>Only <code>test_fix</code> continues to Phase 5 (Fix). For <code>product_bug</code> and <code>environment</code>, the pipeline stops here &mdash; the issue is tracked but no fix is attempted.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <p><strong>Issue repo:</strong> Upstream (<code>redhat-developer/rhdh-plugin-export-overlays</code>). Issues are visible to the whole team, not just the fork owner.</p>
+  </div>
+</section>
+
+<!-- ========== PHASE 5: FIX ========== -->
+<section id="fix">
+  <h2>
+    <span class="dot" style="background:var(--green);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Phase 5: Fix
+    <span class="badge tag-green">Agent</span>
+  </h2>
+
+  <p>Only runs when <code>fix_category = test_fix</code>. The agent reads the analysis, verifies it against actual code, and implements the smallest correct change.</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--green)"></div>
+        <div class="flow-line" style="background:var(--green)"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Verify analysis against code</h4>
+        <p>Read the spec file, config files, and test utils. Confirm the diagnosis is correct. If the analysis is wrong, reason from the code and implement the correct fix instead.</p>
+        <div class="meta"><span class="tag tag-purple">zero-trust</span></div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--green)"></div>
+        <div class="flow-line" style="background:var(--green)"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Implement fix</h4>
+        <p>Modify test specs, playwright config, deployment config. Every line in the diff must be justified by the failure analysis.</p>
+        <div class="meta">
+          <span>&check; <code>workspaces/*/e2e-tests/</code></span>
+          <span>&check; deployment config</span>
+          <span>&cross; plugin source</span>
+          <span>&cross; CI config</span>
+        </div>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--green)"></div>
+        <div class="flow-line" style="background:var(--green)"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Verify locally</h4>
+        <p>Run linters, type checks, any available local validation from the repo's <code>CLAUDE.md</code> or <code>Makefile</code>.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--green)"></div>
+        <div class="flow-line" style="background:transparent"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Commit</h4>
+        <p>Stage only changed files (never <code>git add -A</code>). Conventional commit on <code>fix/e2e-&lt;slug&gt;</code> branch. Always new commit, never amend.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== PHASE 6: PUSH + PR ========== -->
+<section id="push-pr">
+  <h2>
+    <span class="dot" style="background:var(--green);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Phase 6: Push + PR
+    <span class="badge tag-green">Fullsend or Local</span>
+  </h2>
+
+  <p>The fix is committed on a feature branch. This phase pushes it to the fork and creates a cross-fork PR on upstream. The issue is updated with the PR link and an attempt label.</p>
+
+  <div class="dual-path">
+    <div class="path" style="background:var(--surface)">
+      <h5 style="color:var(--accent)">Fullsend (GH Actions)</h5>
+      <p>Agent comments on the issue summarizing what it fixed.</p>
+      <p><code>post-e2e-fix.sh</code> runs on host after sandbox:</p>
+      <p>1. Push branch to fork</p>
+      <p>2. Create cross-fork PR on upstream</p>
+      <p>3. Comment on issue with PR link</p>
+      <p>4. Add <code>attempt:N</code> label to issue</p>
+    </div>
+    <div class="path" style="background:var(--surface)">
+      <h5 style="color:var(--green)">Local</h5>
+      <p>Agent does everything directly:</p>
+      <p>1. Push branch to fork</p>
+      <p>2. Create cross-fork PR on upstream</p>
+      <p>3. Comment on issue with fix summary + PR link</p>
+      <p>4. Add <code>attempt:N</code> label to issue</p>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <p><strong>Cross-fork PR:</strong> The PR is created from <code>subhashkhileri/rhdh-plugin-export-overlays:fix/e2e-&lt;slug&gt;</code> targeting <code>redhat-developer/rhdh-plugin-export-overlays:main</code> (or <code>release-1.10</code>).</p>
+  </div>
+
+  <div class="callout callout-orange">
+    <p><strong>No review request yet.</strong> The PR is not labeled <code>ready-to-merge</code> at this point &mdash; CI hasn't run. Review request and labeling happen after CI passes in <a href="#post-pipeline">Post-Pipeline</a>.</p>
+  </div>
+</section>
+
+<!-- ========== PHASE 7: MONITOR CI ========== -->
+<section id="monitor">
+  <h2>
+    <span class="dot" style="background:var(--orange);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Phase 7: Monitor CI
+    <span class="badge tag-orange">GH Actions</span>
+  </h2>
+
+  <p>After the PR is pushed, the pipeline triggers OpenShift CI on the PR, waits for the result, and routes to the next step.</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--orange)"></div>
+        <div class="flow-line" style="background:var(--orange)"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Trigger CI</h4>
+        <p>The GH Actions bot comments <code>/test e2e-ocp-helm-nightly</code> on the PR. The <code>GH_TOKEN</code> must belong to a trusted org member &mdash; prow checks <code>author_association</code> before accepting the command.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--orange)"></div>
+        <div class="flow-line" style="background:var(--orange)"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Poll for completion (~40 min)</h4>
+        <p>The workflow polls the PR's status checks every 5 minutes until the e2e check completes. The runner sleeps between polls &mdash; costs nothing on public repos.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--orange)"></div>
+        <div class="flow-line" style="background:transparent"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Extract result</h4>
+        <p>If CI failed, the prow URL is extracted from the check's <code>detailsUrl</code> field &mdash; no GCS listing needed.</p>
+        <div class="branch" style="margin-top:12px">
+          <div class="branch-card">
+            <h5><span class="dot" style="background:var(--green);width:8px;height:8px;display:inline-block;border-radius:50%"></span> CI passed</h5>
+            <p>Close issue &rarr; <a href="#post-pipeline">Post-Pipeline</a></p>
+          </div>
+          <div class="branch-card">
+            <h5><span class="dot" style="background:var(--red);width:8px;height:8px;display:inline-block;border-radius:50%"></span> CI failed</h5>
+            <p>Check attempt count &rarr; <a href="#iterate">Iterate</a> or <a href="#skip-jira">Skip</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <p><strong>Local path:</strong> The user handles this phase manually &mdash; comments <code>/test e2e-ocp-helm-nightly</code> on the PR, waits for CI, then invokes <code>/fs-e2e-fix iterate &lt;prow-url&gt; --issue N</code> with the new failure URL.</p>
+  </div>
+</section>
+
+<!-- ========== PHASE 8: ITERATE ========== -->
+<section id="iterate">
+  <h2>
+    <span class="dot" style="background:var(--pink);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Phase 8: Iterate
+    <span class="badge tag-pink">attempt &lt; 2</span>
+  </h2>
+
+  <p>When CI fails and attempts remain, the pipeline starts a <strong>fresh agent run</strong> &mdash; fullsend has no session persistence, so the previous run's context is gone. The iteration follows the same phases (Analyze &rarr; Fix &rarr; Push &rarr; Monitor) with these key differences:</p>
+
+  <table>
+    <tr><th>What's different</th><th>First run</th><th>Iteration</th></tr>
+    <tr>
+      <td><strong>Prior context</strong></td>
+      <td>None needed</td>
+      <td>Agent reads issue comments to learn what was tried before <span class="tag tag-orange">no session persistence</span></td>
+    </tr>
+    <tr>
+      <td><strong>Analysis</strong></td>
+      <td>Analyze the nightly failure</td>
+      <td>Analyze the <em>new</em> CI failure (different prow URL, extracted from check <code>detailsUrl</code>)</td>
+    </tr>
+    <tr>
+      <td><strong>Fix strategy</strong></td>
+      <td>Implement based on analysis</td>
+      <td>Agent judgment: refine the previous fix, or pivot to a different approach <span class="tag tag-purple">agent judgment</span></td>
+    </tr>
+    <tr>
+      <td><strong>Branch</strong></td>
+      <td>Create new <code>fix/e2e-&lt;slug&gt;</code></td>
+      <td>Checkout existing branch, add a new commit (never amend)</td>
+    </tr>
+    <tr>
+      <td><strong>Issue update</strong></td>
+      <td>Create issue, label <code>attempt:1</code></td>
+      <td>Comment on issue with new approach, update label to <code>attempt:2</code></td>
+    </tr>
+  </table>
+
+  <p>After the updated PR is pushed, the pipeline loops back to <a href="#monitor">Phase 7: Monitor CI</a> to trigger and poll CI again.</p>
+</section>
+
+<!-- ========== PHASE 9: SKIP + JIRA ========== -->
+<section id="skip-jira">
+  <h2>
+    <span class="dot" style="background:var(--red);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Phase 9: Skip + JIRA Escalation
+    <span class="badge tag-red">attempt = max</span>
+  </h2>
+
+  <p>When 2 fix attempts have failed, the failure is likely a product bug beyond the scope of test/config changes. The same fix agent runs in <code>FIX_MODE=skip</code> &mdash; instead of implementing a fix, it skips the failing test case and creates a JIRA bug for tracking.</p>
+
+  <div class="flow">
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--red)"></div>
+        <div class="flow-line" style="background:var(--red)"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Create JIRA bug from issue history</h4>
+        <p>The agent reads the full issue history (all prior analysis, fix attempts, and outcomes) and creates a <code>RHDHBUGS</code> ticket via ACLI.</p>
+        <table>
+          <tr><th>Field</th><th>Value</th></tr>
+          <tr><td>Summary</td><td>Test case name + short root cause</td></tr>
+          <tr><td>Description</td><td>Root cause, fix attempt 1 + outcome, fix attempt 2 + outcome, prow URLs, workspace/plugin name, link to skip PR</td></tr>
+          <tr><td>Labels</td><td>e2e-nightly, auto-skip</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--red)"></div>
+        <div class="flow-line" style="background:var(--red)"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Add test.skip, commit, and push</h4>
+        <p>The JIRA key goes directly in the skip reason string &mdash; grep-friendly for the <a href="#stale-skip">future stale-skip scanner</a>. New commit on the existing <code>fix/e2e-&lt;slug&gt;</code> branch; the PR updates automatically.</p>
+        <pre>test.skip(
+  isNightlyMode,
+  "filecheck lock timeout after pod restart (RHDHBUGS-4521)",
+);</pre>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="flow-rail">
+        <div class="flow-dot" style="border-color:var(--red)"></div>
+        <div class="flow-line" style="background:transparent"></div>
+      </div>
+      <div class="flow-content">
+        <h4>Label PR, request review, close issue</h4>
+        <p>Add <code>ready-to-merge</code> label and request review from the team &mdash; human reviews the skip, sees the JIRA reference, approves. Close the issue with a comment: "Skipped &mdash; tracked in RHDHBUGS-XXXX."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr>
+
+<!-- ========== POST-PIPELINE ========== -->
+<section id="post-pipeline">
+  <h2>
+    <span class="dot" style="background:var(--green);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Post-Pipeline Lifecycle
+  </h2>
+
+  <p>By the time the pipeline exits, the issue is closed and the PR is labeled <code>ready-to-merge</code> with a review request. What happens next is human-driven.</p>
+
+  <div class="branch">
+    <div class="branch-card">
+      <h5><span class="dot" style="background:var(--green);width:8px;height:8px;display:inline-block;border-radius:50%"></span> Fix PR (CI passed)</h5>
+      <p>Human reviews the fix diff, approves, and merges. Next nightly should pass for this test case.</p>
+    </div>
+    <div class="branch-card">
+      <h5><span class="dot" style="background:var(--red);width:8px;height:8px;display:inline-block;border-radius:50%"></span> Skip PR (escalated to JIRA)</h5>
+      <p>Human reviews the <code>test.skip</code>, sees the JIRA reference, approves, and merges. The <code>RHDHBUGS-XXXX</code> bug stays open for the product team to fix in a future release.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <p><strong>After a skip PR is merged:</strong> When the JIRA bug is eventually resolved, a <a href="#stale-skip">stale-skip scanner</a> (future) finds the <code>test.skip</code> with that JIRA key, removes it, and opens an unskip PR.</p>
+  </div>
+</section>
+
+<!-- ========== STATE MANAGEMENT ========== -->
+<section id="state">
+  <h2>
+    <span class="dot" style="background:var(--cyan);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    State Management
+  </h2>
+
+  <p>All pipeline state lives on the GitHub issue. No local files, no session persistence, no external databases. The issue is the single source of truth across agent runs.</p>
+
+  <h3>Example: Issue #42 lifecycle</h3>
+  <div class="timeline">
+    <div class="timeline-item t-blue">
+      <h5>Issue created</h5>
+      <p>Body: root cause analysis, prow URL, <code>fix_category: test_fix</code></p>
+    </div>
+    <div class="timeline-item t-green">
+      <h5>Fix attempt 1</h5>
+      <p>Comment: "Fix attempted in PR #55. Reduced filecheck timeout 15m&rarr;2m."</p>
+      <p>Label: <span class="tag tag-blue">attempt:1</span></p>
+    </div>
+    <div class="timeline-item t-red">
+      <h5>CI failed</h5>
+      <p>Comment: "CI failed. New analysis: startup probe still failing due to..."</p>
+    </div>
+    <div class="timeline-item t-green">
+      <h5>Fix attempt 2</h5>
+      <p>Comment: "Attempt 2: Also fixed nightly skip condition for JOB_NAME detection."</p>
+      <p>Label: <span class="tag tag-blue">attempt:1</span> &rarr; <span class="tag tag-orange">attempt:2</span></p>
+    </div>
+    <div class="timeline-item t-purple">
+      <h5>Escalated to skip</h5>
+      <p>Comment: "Skipped &mdash; tracked in RHDHBUGS-4521"</p>
+      <p>State: <span class="tag tag-red">closed</span></p>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>State</th><th>Where it lives</th></tr>
+    <tr><td>Attempt count</td><td>Issue labels: <code>attempt:1</code>, <code>attempt:2</code></td></tr>
+    <tr><td>Analysis results</td><td>Issue body (first run) or comments (updates)</td></tr>
+    <tr><td>Fix agent actions</td><td>Issue comments posted by the agent</td></tr>
+    <tr><td>PR link</td><td>Issue comment from agent (fix summary) and post-script (PR URL)</td></tr>
+    <tr><td>Branch name</td><td>Derived from issue + PR, passed as <code>FIX_PR_BRANCH</code></td></tr>
+    <tr><td>Skip/JIRA outcome</td><td>Final issue comment before close</td></tr>
+  </table>
+</section>
+
+<!-- ========== NIGHTLY DEDUP ========== -->
+<section id="nightly-dedup">
+  <h2>
+    <span class="dot" style="background:var(--orange);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Nightly Dedup
+  </h2>
+
+  <p>While a fix PR waits for human review/merge, the nightly keeps running and failing on the same test case. The pipeline detects this in <a href="#issue">Phase 4</a> &mdash; after analysis identifies the failing test case, it checks for an existing open fix PR. If one exists, the pipeline comments on the existing issue ("Nightly still failing. Fix PR #N pending merge.") and stops. No duplicate PRs, no wasted fix attempts.</p>
+</section>
+
+<!-- ========== STALE-SKIP SCANNER ========== -->
+<section id="stale-skip">
+  <h2>
+    <span class="dot" style="background:var(--purple);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Stale-Skip Scanner
+    <span class="badge tag-purple">Future</span>
+  </h2>
+
+  <p>A periodic agent or script that finds skipped test cases whose JIRA bugs have been resolved, and creates PRs to remove the skips.</p>
+
+  <pre>
+# Scan for skipped tests with JIRA references:
+grep -rn 'test.skip' workspaces/*/e2e-tests/ \
+  | grep 'RHDHBUGS-'
+
+# For each JIRA key found:
+acli jira getIssue --issue RHDHBUGS-4521 --field status
+
+# If status = Done/Closed:
+#   → Remove test.skip
+#   → Create unskip PR
+#   → Link to the original JIRA</pre>
+
+  <div class="callout callout-orange">
+    <p><strong>Not built now.</strong> The structured skip format (<code>RHDHBUGS-XXXX</code> in the reason string) is the design-for-future that enables this scanner. No extra work needed today.</p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ========== FILES ========== -->
+<section id="files">
+  <h2>
+    <span class="dot" style="background:var(--accent);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Files
+  </h2>
+
+  <h3>Target repo <code>.fullsend/</code></h3>
+  <div class="file-tree">
+<span class="dir">.fullsend/</span>
+├── <span class="dir">agents/</span>
+│   └── <span class="new">e2e-fix.md</span>            <span class="comment"># NEW — replaces analysis.md + fix.md</span>
+├── <span class="dir">skills/</span>
+│   ├── <span class="dir">e2e-failure-analysis/</span> <span class="comment"># existing — analysis methodology</span>
+│   │   └── <span class="existing">SKILL.md</span>
+│   ├── <span class="dir">gh-issue-ops/</span>         <span class="comment"># NEW — dedup, create, comment, label</span>
+│   │   └── <span class="new">SKILL.md</span>
+│   └── <span class="dir">jira-ops/</span>             <span class="comment"># NEW — create RHDHBUGS via ACLI</span>
+│       └── <span class="new">SKILL.md</span>
+├── <span class="dir">harness/</span>
+│   └── <span class="new">e2e-fix.yaml</span>          <span class="comment"># NEW — replaces analysis.yaml + fix.yaml</span>
+├── <span class="dir">policies/</span>
+│   └── <span class="new">e2e-fix.yaml</span>          <span class="comment"># NEW — GCS + GitHub + JIRA network</span>
+├── <span class="dir">scripts/</span>
+│   └── <span class="new">post-e2e-fix.sh</span>       <span class="comment"># NEW — replaces post-fix.sh</span>
+└── <span class="dir">env/</span>
+    └── <span class="new">e2e-fix.env</span>           <span class="comment"># NEW — replaces fix.env</span>
+  </div>
+
+  <h3>Deleted (old two-agent pipeline)</h3>
+  <div class="file-tree">
+<span class="comment"># These are replaced by e2e-fix.md + e2e-fix.yaml:</span>
+<span class="existing">agents/analysis.md</span>       <span class="comment"># → merged into e2e-fix.md</span>
+<span class="existing">agents/fix.md</span>            <span class="comment"># → merged into e2e-fix.md</span>
+<span class="existing">harness/analysis.yaml</span>    <span class="comment"># → merged into e2e-fix.yaml</span>
+<span class="existing">harness/fix.yaml</span>         <span class="comment"># → merged into e2e-fix.yaml</span>
+<span class="existing">env/fix.env</span>              <span class="comment"># → merged into e2e-fix.env</span>
+<span class="existing">scripts/post-fix.sh</span>      <span class="comment"># → merged into post-e2e-fix.sh</span>
+  </div>
+
+  <h3>Local <code>~/.claude/skills/</code></h3>
+  <div class="file-tree">
+<span class="dir">~/.claude/skills/</span>
+├── <span class="dir">e2e-failure-analysis/</span>   <span class="comment"># existing — same skill, local copy</span>
+│   └── <span class="existing">SKILL.md</span>
+├── <span class="dir">gh-issue-ops/</span>           <span class="comment"># NEW — same skill, local copy</span>
+│   └── <span class="new">SKILL.md</span>
+└── <span class="dir">jira-ops/</span>               <span class="comment"># NEW — same skill, local copy</span>
+    └── <span class="new">SKILL.md</span>
+  </div>
+
+  <h3>Upstream repo</h3>
+  <div class="file-tree">
+<span class="dir">.github/workflows/</span>
+└── <span class="new">nightly-e2e-pipeline.yaml</span>  <span class="comment"># NEW — cron + orchestration</span>
+  </div>
+
+  <h3>Status summary</h3>
+  <table>
+    <tr><th>Component</th><th>Status</th><th>Change needed</th></tr>
+    <tr>
+      <td>e2e-fix agent</td>
+      <td><span class="tag tag-orange">New</span></td>
+      <td>Replaces <code>analysis.md</code> + <code>fix.md</code>. Unified agent: analyze, classify, issue, fix, skip.</td>
+    </tr>
+    <tr>
+      <td>e2e-failure-analysis skill</td>
+      <td><span class="tag tag-green">Exists</span></td>
+      <td>Add <code>fix_category</code> to output guidance</td>
+    </tr>
+    <tr>
+      <td>gh-issue-ops skill</td>
+      <td><span class="tag tag-orange">New</span></td>
+      <td>Dedup, create, comment, label, close</td>
+    </tr>
+    <tr>
+      <td>jira-ops skill</td>
+      <td><span class="tag tag-orange">New</span></td>
+      <td>Create RHDHBUGS ticket via ACLI</td>
+    </tr>
+    <tr>
+      <td>e2e-fix harness + policy + env</td>
+      <td><span class="tag tag-orange">New</span></td>
+      <td>Replaces <code>analysis.yaml</code> + <code>fix.yaml</code> + <code>fix.env</code></td>
+    </tr>
+    <tr>
+      <td>post-e2e-fix.sh</td>
+      <td><span class="tag tag-orange">New</span></td>
+      <td>Replaces <code>post-fix.sh</code>. Push + PR + label + review request.</td>
+    </tr>
+    <tr>
+      <td>GH Actions workflow</td>
+      <td><span class="tag tag-orange">New</span></td>
+      <td>Cron + detect + orchestrate + poll CI</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ========== CREDENTIALS ========== -->
+<section id="credentials">
+  <h2>
+    <span class="dot" style="background:var(--red);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Credentials &amp; Secrets
+  </h2>
+
+  <table>
+    <tr><th>Secret</th><th>Used by</th><th>Purpose</th></tr>
+    <tr>
+      <td><code>GH_TOKEN</code></td>
+      <td>e2e-fix agent, post-script</td>
+      <td>GitHub API (issues, PRs, comments, checks). Must be from a trusted org member for <code>/test</code> comments.</td>
+    </tr>
+    <tr>
+      <td><code>GOOGLE_APPLICATION_CREDENTIALS</code></td>
+      <td>e2e-fix agent</td>
+      <td>GCS artifact access + Vertex AI for model inference</td>
+    </tr>
+    <tr>
+      <td><code>JIRA_URL</code></td>
+      <td>e2e-fix agent (skip mode)</td>
+      <td>JIRA server URL for ACLI</td>
+    </tr>
+    <tr>
+      <td><code>JIRA_TOKEN</code></td>
+      <td>e2e-fix agent (skip mode)</td>
+      <td>JIRA API token for ACLI</td>
+    </tr>
+    <tr>
+      <td><code>JIRA_USER</code></td>
+      <td>e2e-fix agent (skip mode)</td>
+      <td>JIRA service account email for ACLI</td>
+    </tr>
+  </table>
+
+  <div class="callout callout-orange">
+    <p><strong>GH_TOKEN requirement:</strong> The token must belong to a user who is a trusted member of the <code>redhat-developer</code> org. Prow checks <code>author_association</code> before accepting <code>/test</code> commands. A bot token from a non-member will be ignored.</p>
+  </div>
+</section>
+
+<!-- ========== DECISION LOG ========== -->
+<section id="decisions">
+  <h2>
+    <span class="dot" style="background:var(--text-muted);width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+    Decision Log
+  </h2>
+
+  <p>Key design decisions made during planning.</p>
+
+  <table>
+    <tr><th>Decision</th><th>Choice</th><th>Rationale</th></tr>
+    <tr>
+      <td>Orchestration</td>
+      <td>GH Actions cron</td>
+      <td>Fully automated, runs without user. Free for public repos.</td>
+    </tr>
+    <tr>
+      <td>Failure detection</td>
+      <td>GCS artifact listing</td>
+      <td>Same pattern as existing Overlay-alerts.gs. No new infra.</td>
+    </tr>
+    <tr>
+      <td>Issue creation</td>
+      <td>Agent via gh-issue-ops skill</td>
+      <td>Agent already has gh access and full analysis context. Richer issue content, no separate post-script needed.</td>
+    </tr>
+    <tr>
+      <td>Classification</td>
+      <td>Structured <code>fix_category</code></td>
+      <td>Machine-readable routing. Saves fix agent runs on unfixable issues.</td>
+    </tr>
+    <tr>
+      <td>Dedup</td>
+      <td>Comment on existing issue</td>
+      <td>Adds fresh data without creating duplicates.</td>
+    </tr>
+    <tr>
+      <td>Skip mode</td>
+      <td>Same agent, <code>FIX_MODE=skip</code></td>
+      <td>One agent, two modes. Simpler to maintain.</td>
+    </tr>
+    <tr>
+      <td>ACLI credentials</td>
+      <td>Environment variables</td>
+      <td>Simple, no file mounts needed for JIRA access.</td>
+    </tr>
+    <tr>
+      <td>Retry budget</td>
+      <td>2 attempts</td>
+      <td>Balance cost vs thoroughness. 3+ usually means product bug.</td>
+    </tr>
+    <tr>
+      <td>State store</td>
+      <td>GitHub issue labels + comments</td>
+      <td>No session persistence in fullsend. Issue is the coordination log.</td>
+    </tr>
+    <tr>
+      <td>Issue repo</td>
+      <td>Upstream</td>
+      <td>Visible to the whole team, not just the fork owner.</td>
+    </tr>
+    <tr>
+      <td>Agent gh access</td>
+      <td>Unblock <code>gh issue comment</code> only</td>
+      <td>Agent can post coordination comments. No PR mutations.</td>
+    </tr>
+    <tr>
+      <td>Skip format</td>
+      <td>JIRA key in reason string</td>
+      <td>Grep-friendly. Enables future stale-skip scanner.</td>
+    </tr>
+    <tr>
+      <td>Branch scope</td>
+      <td>All configured branches</td>
+      <td>Covers main + release branches. Each gets its own issue + PR.</td>
+    </tr>
+    <tr>
+      <td>Issue close</td>
+      <td>Auto-close when CI passes</td>
+      <td>Clean lifecycle. PR merge also closes via commit reference.</td>
+    </tr>
+    <tr>
+      <td>JIRA project</td>
+      <td>RHDHBUGS</td>
+      <td>Matches existing project for plugin bugs.</td>
+    </tr>
+    <tr>
+      <td>Workflow location</td>
+      <td>Upstream repo</td>
+      <td>Whole team benefits. Secrets configured in upstream settings.</td>
+    </tr>
+    <tr>
+      <td>CI trigger</td>
+      <td>Bot comments <code>/test</code></td>
+      <td>Fully automated. Requires trusted org member token.</td>
+    </tr>
+    <tr>
+      <td>CI monitoring</td>
+      <td>Poll <code>gh pr checks</code></td>
+      <td>Simple, no webhook setup. 5-min poll interval.</td>
+    </tr>
+    <tr>
+      <td>Prow URL extraction</td>
+      <td>From check <code>detailsUrl</code></td>
+      <td>Direct from PR checks API. No GCS listing needed.</td>
+    </tr>
+    <tr>
+      <td>PR merge</td>
+      <td>Request review + label</td>
+      <td>Human reviews, agent doesn't auto-merge.</td>
+    </tr>
+    <tr>
+      <td>Nightly dedup</td>
+      <td>Skip if open fix PR exists</td>
+      <td>Comment on existing issue, no duplicate work.</td>
+    </tr>
+    <tr>
+      <td>Unskip</td>
+      <td>Future stale-skip scanner</td>
+      <td>Enabled by structured skip format. Not built now.</td>
+    </tr>
+    <tr>
+      <td>Architecture</td>
+      <td>Agent orchestrates, skills are tools</td>
+      <td>Agent handles judgment (classify, fix strategy, when to escalate). Skills handle procedures (how to read artifacts, how to create issues).</td>
+    </tr>
+    <tr>
+      <td>Agent consolidation</td>
+      <td>Single <code>e2e-fix</code> replaces <code>analysis</code> + <code>fix</code></td>
+      <td>Old two-agent pipeline required post-script chaining and <code>agent-result.json</code> passthrough. One agent holds full context, uses skills for analysis. Deletes 6 files, creates 6 replacements.</td>
+    </tr>
+  </table>
+</section>
+
+</main>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1c2129',
+      primaryTextColor: '#e6edf3',
+      primaryBorderColor: '#30363d',
+      lineColor: '#8b949e',
+      secondaryColor: '#161b22',
+      tertiaryColor: '#0d1117',
+      fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif',
+      fontSize: '13px',
+      edgeLabelBackground: '#0d1117'
+    },
+    flowchart: {
+      curve: 'basis',
+      padding: 16,
+      nodeSpacing: 30,
+      rankSpacing: 40,
+      htmlLabels: true,
+      useMaxWidth: true
+    }
+  });
+</script>
+
+<script>
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('nav a[href^="#"]');
+
+  function activate() {
+    let current = '';
+    for (const s of sections) {
+      if (s.getBoundingClientRect().top <= 80) current = s.id;
+    }
+    for (const a of links) {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    }
+  }
+
+  window.addEventListener('scroll', activate, { passive: true });
+  activate();
+</script>
+
+</body>
+</html>
